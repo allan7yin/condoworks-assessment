@@ -1,10 +1,18 @@
 const puppeteer = require("puppeteer");
+const dotenv = require("dotenv");
+const os = require("os");
+const path = require("path");
+
+dotenv.config();
+
+const homeDir = os.homedir();
+const donwloadPath = path.join(homeDir, "Downloads");
 
 // Credentials
-const username = "coop.test@condoworks.co";
-const password = "TheTest139";
+const username = process.env.USERNAME;
+const password = process.env.PASSWORD;
 
-const url = "https://app-dev.condoworks.co";
+const url = process.env.URL;
 
 const login = async () => {
   const browser = await puppeteer.launch({
@@ -28,19 +36,29 @@ const login = async () => {
     await page.click("li.nav-item.dropdown.mr-1");
     await page.click('.dropdown-item[href="/invoices/all"]');
 
-    await page.waitForSelector("#gs_invoices.InvoiceNumber");
+    // grab the input field to enter 123
+    await page.waitForSelector("#gs_invoices\\.InvoiceNumber");
+    const inputElement = await page.$("#gs_invoices\\.InvoiceNumber");
+    await inputElement.type("123");
 
-    // Type "123" into the input field
-    await page.type("#gs_invoices.InvoiceNumber", "123");
-    await page.click(".fa-search");
-    await page.waitForNavigation({ waitUntil: "domcontentloaded" });
+    // now, we click on the row of 123444
+    await page.waitForSelector(
+      'a[title="View/Edit"][href="https://app-dev.condoworks.co/invoiceadmin/edit/cooptest/61095?returnToList=%2Finvoices%2Fall"]',
+      { visible: true }
+    );
 
     await page.click(
       'a[title="View/Edit"][href="https://app-dev.condoworks.co/invoiceadmin/edit/cooptest/61095?returnToList=%2Finvoices%2Fall"]'
     );
-    await page.waitForNavigation({ waitUntil: "domcontentloaded" });
 
-    await page.screenshot({ path: "./invoices_page_after_click_link.png" });
+    // now, we click on the download button
+    await page.waitForSelector('a.kv-file-download[title="Download file"]', {
+      visible: true,
+    });
+
+    await page.click('a.kv-file-download[title="Download file"]');
+
+    console.log(donwloadPath);
   } catch (error) {
     console.log("Error duing web-scraping process:", error);
   } finally {
